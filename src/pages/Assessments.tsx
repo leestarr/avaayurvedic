@@ -54,13 +54,72 @@ const Assessments = () => {
 
   const getPromptForBodyPart = (bodyPart: BodyPart): string => {
     const prompts = {
-      face: "Analyze this person's face and provide a detailed Ayurvedic assessment. Focus on facial features, skin texture, complexion, and any visible imbalances. Consider the three doshas (Vata, Pitta, Kapha) and their manifestations in facial characteristics. Be specific about any potential health concerns or imbalances you observe.",
-      tongue: "Analyze this person's tongue and provide a detailed Ayurvedic assessment. Focus on tongue color, coating, texture, and any visible patterns or marks. Consider what these characteristics might indicate about digestive health, dosha imbalances, and potential health concerns. Be specific and professional in your analysis.",
-      eyes: "Analyze this person's eyes and provide a detailed Ayurvedic assessment. Focus on eye color, shape, surrounding area, and any visible characteristics. Consider what these features might indicate about dosha balance, overall health, and potential imbalances. Be specific and professional in your analysis.",
-      nose: "Analyze this person's nose and provide a detailed Ayurvedic assessment. Focus on nose shape, color, texture, and any visible characteristics. Consider what these features might indicate about respiratory health, dosha balance, and potential imbalances. Be specific and professional in your analysis.",
-      ears: "Analyze this person's ears and provide a detailed Ayurvedic assessment. Focus on ear shape, color, texture, and any visible characteristics. Consider what these features might indicate about kidney health, dosha balance, and potential imbalances. Be specific and professional in your analysis.",
-      teeth: "Analyze this person's teeth and gums and provide a detailed Ayurvedic assessment. Focus on tooth color, alignment, gum health, and any visible characteristics. Consider what these features might indicate about digestive health, dosha balance, and potential imbalances. Be specific and professional in your analysis.",
-      'general face': "Provide a comprehensive Ayurvedic assessment of this person's face. Consider all facial features, skin condition, and overall appearance. Analyze the balance of the three doshas (Vata, Pitta, Kapha) and their manifestations. Identify any potential health concerns or imbalances. Be specific and professional in your analysis."
+      face: `As an Ayurvedic expert, analyze this person's face and provide a detailed assessment focusing on:
+1. Dosha balance (Vata, Pitta, Kapha) based on facial features
+2. Skin texture, color, and condition
+3. Facial structure and symmetry
+4. Any visible imbalances or health indicators
+5. Specific Ayurvedic recommendations for balance
+
+Please provide a professional and detailed analysis.`,
+
+      tongue: `As an Ayurvedic expert, analyze this person's tongue and provide a detailed assessment focusing on:
+1. Tongue color and its Ayurvedic significance
+2. Coating texture and thickness
+3. Any visible patterns or marks
+4. Dosha imbalances indicated by tongue characteristics
+5. Digestive health indicators
+6. Specific Ayurvedic recommendations
+
+Please provide a professional and detailed analysis.`,
+
+      eyes: `As an Ayurvedic expert, analyze this person's eyes and provide a detailed assessment focusing on:
+1. Eye color and its dosha correlation
+2. Eye shape and structure
+3. Surrounding area characteristics
+4. Any visible imbalances
+5. Overall health indicators
+6. Specific Ayurvedic recommendations
+
+Please provide a professional and detailed analysis.`,
+
+      nose: `As an Ayurvedic expert, analyze this person's nose and provide a detailed assessment focusing on:
+1. Nose shape and its dosha correlation
+2. Color and texture
+3. Respiratory health indicators
+4. Any visible imbalances
+5. Specific Ayurvedic recommendations
+
+Please provide a professional and detailed analysis.`,
+
+      ears: `As an Ayurvedic expert, analyze this person's ears and provide a detailed assessment focusing on:
+1. Ear shape and its dosha correlation
+2. Color and texture
+3. Kidney health indicators
+4. Any visible imbalances
+5. Specific Ayurvedic recommendations
+
+Please provide a professional and detailed analysis.`,
+
+      teeth: `As an Ayurvedic expert, analyze this person's teeth and gums and provide a detailed assessment focusing on:
+1. Tooth color and condition
+2. Gum health and color
+3. Alignment and structure
+4. Digestive health indicators
+5. Any visible imbalances
+6. Specific Ayurvedic recommendations
+
+Please provide a professional and detailed analysis.`,
+
+      'general face': `As an Ayurvedic expert, provide a comprehensive analysis of this person's face focusing on:
+1. Overall dosha balance (Vata, Pitta, Kapha)
+2. Facial features and their Ayurvedic significance
+3. Skin condition and texture
+4. Any visible imbalances
+5. Overall health indicators
+6. Specific Ayurvedic recommendations for balance
+
+Please provide a professional and detailed analysis.`
     };
     return prompts[bodyPart];
   };
