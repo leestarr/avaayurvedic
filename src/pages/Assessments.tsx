@@ -136,64 +136,58 @@ const Assessments = () => {
         const base64Image = reader.result as string;
         const base64Data = base64Image.split(',')[1];
 
-        // Call Gemini API with the new API key
-        const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=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', {
+        // Call DeepSeek API
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer sk-63924e0ff8c64287b175310c10bd8c42`
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: getPromptForBodyPart(selectedBodyPart) },
-                {
-                  inline_data: {
-                    mime_type: selectedFile.type,
-                    data: base64Data
+            model: "deepseek-vision",
+            messages: [
+              {
+                role: "system",
+                content: "You are an Ayurvedic expert. Analyze the image and provide a detailed assessment based on Ayurvedic principles."
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: getPromptForBodyPart(selectedBodyPart)
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${selectedFile.type};base64,${base64Data}`
+                    }
                   }
-                }
-              ]
-            }],
-            generationConfig: {
-              temperature: 0.4,
-              topK: 32,
-              topP: 1,
-              maxOutputTokens: 2048,
-            },
-            safetySettings: [
-              {
-                category: "HARM_CATEGORY_HARASSMENT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_HATE_SPEECH",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                ]
               }
-            ]
+            ],
+            temperature: 0.4,
+            max_tokens: 2048
           })
         });
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('API Error:', errorData);
           throw new Error(`API Error: ${errorData.error?.message || 'Failed to analyze image'}`);
         }
 
         const data = await response.json();
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-          const analysisText = data.candidates[0].content.parts[0].text;
+        console.log('API Response:', data); // Debug log
+
+        if (data.choices && data.choices[0].message.content) {
+          const analysisText = data.choices[0].message.content;
           setAnalysis(analysisText);
           // Save the analysis to Supabase
           await saveAnalysisToSupabase(publicUrl, analysisText);
         } else {
-          throw new Error('No analysis received from Gemini');
+          console.error('Unexpected API Response:', data); // Debug log
+          throw new Error('No analysis received from DeepSeek');
         }
       };
     } catch (err) {
