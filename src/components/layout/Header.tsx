@@ -43,6 +43,7 @@ const Header: React.FC = () => {
           <NavLink to="/shop" label="Shop" />
           <NavLink to="/appointments" label="Appointments" />
           <NavLink to="/dosha-quiz" label="Dosha Quiz" />
+          <NavLink to="/assessments" label="Assessments" />
           <NavLink to="/about" label="About Us" />
         </nav>
 
@@ -116,6 +117,7 @@ const Header: React.FC = () => {
               <MobileNavLink to="/shop" label="Shop" />
               <MobileNavLink to="/appointments" label="Appointments" />
               <MobileNavLink to="/dosha-quiz" label="Dosha Quiz" />
+              <MobileNavLink to="/assessments" label="Assessments" />
               <MobileNavLink to="/about" label="About Us" />
               <MobileNavLink to="/favorites" label="Favorites" />
               <MobileNavLink to="/account" label="Account" />

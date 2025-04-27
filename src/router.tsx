@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import DoshaQuiz from './pages/DoshaQuiz';
+import Assessments from './pages/Assessments';
 import Appointments from './pages/Appointments';
 import About from './pages/About';
 import Cart from './pages/Cart';
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: 'shop/:category', element: <Shop /> },
       { path: 'product/:id', element: <ProductDetail /> },
       { path: 'dosha-quiz', element: <DoshaQuiz /> },
+      { path: 'assessments', element: <Assessments /> },
       { path: 'appointments', element: <Appointments /> },
       { path: 'about', element: <About /> },
       { path: 'cart', element: <Cart /> },
