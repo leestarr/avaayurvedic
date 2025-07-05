@@ -10,6 +10,7 @@ import Appointments from './pages/Appointments';
 import About from './pages/About';
 import Cart from './pages/Cart';
 import AdminDashboard from './pages/admin/Dashboard';
+import DashboardOverview from './pages/admin/DashboardOverview';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -85,7 +86,7 @@ const router = createBrowserRouter([
       </AdminRoute>
     ),
     children: [
-      { index: true, element: <AdminProducts /> },
+      { index: true, element: <DashboardOverview /> },
       { path: 'products', element: <AdminProducts /> },
       { path: 'appointments', element: <AdminAppointments /> },
       { path: 'users', element: <AdminUsers /> },
