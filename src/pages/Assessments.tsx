@@ -1,275 +1,145 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { Calendar, FileText, Clock, User, ArrowRight } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-type BodyPart = 'face' | 'tongue' | 'eyes' | 'nose' | 'ears' | 'teeth' | 'general face';
+interface Booking {
+  id: string;
+  booking_date: string;
+  status: string;
+  doctor_notes: string | null;
+  next_steps: string | null;
+  follow_up_date: string | null;
+  service: {
+    id: string;
+    name: string;
+    duration: number;
+    price: number;
+  } | null;
+}
 
-const Assessments = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+export default function Assessments() {
+  const supabase = useSupabaseClient();
+  const user = useUser();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart>('face');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsAuthenticated(!!user);
-    if (!user) {
-      setError('Please log in to use the assessment feature');
+    if (user) {
+      loadBookings();
+    } else {
+      setLoading(false);
     }
-  };
+  }, [user, supabase]);
 
-  const bodyParts: { value: BodyPart; label: string; description: string }[] = [
-    { value: 'face', label: 'Face', description: 'Overall facial features and complexion' },
-    { value: 'tongue', label: 'Tongue', description: 'Tongue color, coating, and texture' },
-    { value: 'eyes', label: 'Eyes', description: 'Eye color, shape, and surrounding area' },
-    { value: 'nose', label: 'Nose', description: 'Nose shape, color, and texture' },
-    { value: 'ears', label: 'Ears', description: 'Ear shape, color, and texture' },
-    { value: 'teeth', label: 'Teeth', description: 'Teeth color, alignment, and gum health' },
-    { value: 'general face', label: 'General Face', description: 'Overall facial analysis' }
-  ];
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        setError('File size must be less than 10MB');
-        return;
-      }
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const getPromptForBodyPart = (bodyPart: BodyPart): string => {
-    const prompts = {
-      face: `As an Ayurvedic expert, analyze this person's face and provide a detailed assessment focusing on:
-1. Dosha balance (Vata, Pitta, Kapha) based on facial features
-2. Skin texture, color, and condition
-3. Facial structure and symmetry
-4. Any visible imbalances or health indicators
-5. Specific Ayurvedic recommendations for balance
-
-Please provide a professional and detailed analysis.`,
-
-      tongue: `As an Ayurvedic expert, analyze this person's tongue and provide a detailed assessment focusing on:
-1. Tongue color and its Ayurvedic significance
-2. Coating texture and thickness
-3. Any visible patterns or marks
-4. Dosha imbalances indicated by tongue characteristics
-5. Digestive health indicators
-6. Specific Ayurvedic recommendations
-
-Please provide a professional and detailed analysis.`,
-
-      eyes: `As an Ayurvedic expert, analyze this person's eyes and provide a detailed assessment focusing on:
-1. Eye color and its dosha correlation
-2. Eye shape and structure
-3. Surrounding area characteristics
-4. Any visible imbalances
-5. Overall health indicators
-6. Specific Ayurvedic recommendations
-
-Please provide a professional and detailed analysis.`,
-
-      nose: `As an Ayurvedic expert, analyze this person's nose and provide a detailed assessment focusing on:
-1. Nose shape and its dosha correlation
-2. Color and texture
-3. Respiratory health indicators
-4. Any visible imbalances
-5. Specific Ayurvedic recommendations
-
-Please provide a professional and detailed analysis.`,
-
-      ears: `As an Ayurvedic expert, analyze this person's ears and provide a detailed assessment focusing on:
-1. Ear shape and its dosha correlation
-2. Color and texture
-3. Kidney health indicators
-4. Any visible imbalances
-5. Specific Ayurvedic recommendations
-
-Please provide a professional and detailed analysis.`,
-
-      teeth: `As an Ayurvedic expert, analyze this person's teeth and gums and provide a detailed assessment focusing on:
-1. Tooth color and condition
-2. Gum health and color
-3. Alignment and structure
-4. Digestive health indicators
-5. Any visible imbalances
-6. Specific Ayurvedic recommendations
-
-Please provide a professional and detailed analysis.`,
-
-      'general face': `As an Ayurvedic expert, provide a comprehensive analysis of this person's face focusing on:
-1. Overall dosha balance (Vata, Pitta, Kapha)
-2. Facial features and their Ayurvedic significance
-3. Skin condition and texture
-4. Any visible imbalances
-5. Overall health indicators
-6. Specific Ayurvedic recommendations for balance
-
-Please provide a professional and detailed analysis.`
-    };
-    return prompts[bodyPart];
-  };
-
-  const saveAnalysisToSupabase = async (imageUrl: string, analysis: string) => {
+  const loadBookings = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          booking_date,
+          status,
+          doctor_notes,
+          next_steps,
+          follow_up_date,
+          service:service_id (
+            id,
+            name,
+            duration,
+            price
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('booking_date', { ascending: false });
+
+      if (bookingsError) {
+        console.error('Bookings error:', bookingsError);
+        throw bookingsError;
       }
 
-      const { error } = await supabase
-        .from('ayurvedic_assessments')
-        .insert([
-          {
-            user_id: user.id,
-            body_part: selectedBodyPart,
-            image_url: imageUrl,
-            analysis: analysis,
-            created_at: new Date().toISOString()
-          }
-        ]);
+      // Transform the data to match our Booking interface
+      const transformedBookings = (bookingsData || []).map((booking: any) => ({
+        id: booking.id,
+        booking_date: booking.booking_date,
+        status: booking.status,
+        doctor_notes: booking.doctor_notes,
+        next_steps: booking.next_steps,
+        follow_up_date: booking.follow_up_date,
+        service: booking.service ? {
+          id: booking.service.id,
+          name: booking.service.name,
+          duration: booking.service.duration,
+          price: booking.service.price
+        } : null
+      }));
 
-      if (error) throw error;
-    } catch (err) {
-      console.error('Error saving analysis:', err);
-      // Don't throw the error as we still want to show the analysis to the user
-    }
-  };
-
-  const analyzeImage = async () => {
-    if (!isAuthenticated) {
-      setError('Please log in to use the assessment feature');
-      navigate('/login');
-      return;
-    }
-
-    if (!selectedFile) {
-      setError('Please select an image first');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setAnalysis(null);
-
-    try {
-      // First, upload the image to Supabase Storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('assessments')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload image. Please try again.');
-      }
-
-      // Get the public URL of the uploaded image
-      const { data: { publicUrl } } = supabase.storage
-        .from('assessments')
-        .getPublicUrl(fileName);
-
-      // Convert image to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
-      reader.onloadend = async () => {
-        const base64Image = reader.result as string;
-        const base64Data = base64Image.split(',')[1];
-
-        // Call DeepSeek API
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer sk-63924e0ff8c64287b175310c10bd8c42`
-          },
-          body: JSON.stringify({
-            model: "deepseek-vision",
-            messages: [
-              {
-                role: "system",
-                content: "You are an Ayurvedic expert. Analyze the image and provide a detailed assessment based on Ayurvedic principles."
-              },
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: getPromptForBodyPart(selectedBodyPart)
-                  },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: `data:${selectedFile.type};base64,${base64Data}`
-                    }
-                  }
-                ]
-              }
-            ],
-            temperature: 0.4,
-            max_tokens: 2048
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('API Error:', errorData);
-          throw new Error(`API Error: ${errorData.error?.message || 'Failed to analyze image'}`);
-        }
-
-        const data = await response.json();
-        console.log('API Response:', data); // Debug log
-
-        if (data.choices && data.choices[0].message.content) {
-          const analysisText = data.choices[0].message.content;
-          setAnalysis(analysisText);
-          // Save the analysis to Supabase
-          await saveAnalysisToSupabase(publicUrl, analysisText);
-        } else {
-          console.error('Unexpected API Response:', data); // Debug log
-          throw new Error('No analysis received from DeepSeek');
-        }
-      };
-    } catch (err) {
-      console.error('Analysis error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to analyze image. Please try again.');
+      setBookings(transformedBookings);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+      setError('Failed to load appointment notes');
+      toast.error('Failed to load appointment notes');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isAuthenticated) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Ayurvedic Assessment</h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Please log in to use the assessment feature.
-          </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h2>
+          <p className="text-gray-600 mb-6">Please log in to view your appointment notes.</p>
+          <a
+            href="/login"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
           >
-            Log In
+            Go to Login
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your appointment notes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={loadBookings}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+          >
+            Try Again
           </button>
         </div>
       </div>
@@ -278,139 +148,134 @@ Please provide a professional and detailed analysis.`
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Ayurvedic Assessment</h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Upload a clear photo and select the body part for an Ayurvedic analysis using AI technology.
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Appointment Notes</h1>
+          <p className="text-lg text-gray-600">
+            Review your consultation notes, next steps, and follow-up appointments
           </p>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6 mb-8">
+        {bookings.length === 0 ? (
+          <div className="text-center py-12">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
+            <p className="text-gray-600 mb-6">
+              You haven't had any appointments yet, or no notes have been added to your appointments.
+            </p>
+            <a
+              href="/appointments"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            >
+              Book an Appointment
+            </a>
+          </div>
+        ) : (
           <div className="space-y-6">
-            {/* Body Part Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Body Part
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {bodyParts.map((part) => (
-                  <button
-                    key={part.value}
-                    onClick={() => setSelectedBodyPart(part.value)}
-                    className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                      selectedBodyPart === part.value
-                        ? 'border-amber-500 bg-amber-50'
-                        : 'border-gray-200 hover:border-amber-300'
-                    }`}
-                  >
-                    <h3 className="font-medium text-gray-900">{part.label}</h3>
-                    <p className="text-sm text-gray-500">{part.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* File Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Photo
-              </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  {preview ? (
-                    <div className="mb-4">
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="mx-auto h-64 w-64 object-cover rounded-lg"
-                      />
+            {bookings.map((booking) => (
+              <div key={booking.id} className="bg-white shadow rounded-lg overflow-hidden">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <Calendar className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {booking.service?.name || 'Appointment'}
+                        </h3>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span className="flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {formatDate(booking.booking_date)} at {formatTime(booking.booking_date)}
+                          </span>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {booking.status}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    {booking.follow_up_date && (
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-emerald-600">Follow-up</div>
+                        <div className="text-sm text-gray-500">
+                          {formatDate(booking.follow_up_date)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="px-6 py-4 space-y-4">
+                  {/* Doctor's Notes */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <User className="h-5 w-5 text-emerald-600 mr-2" />
+                      <h4 className="text-md font-medium text-gray-900">Doctor's Notes</h4>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      {booking.doctor_notes ? (
+                        <p className="text-gray-700 whitespace-pre-wrap">{booking.doctor_notes}</p>
+                      ) : (
+                        <p className="text-gray-500 italic">No notes available for this appointment.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Next Steps */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <ArrowRight className="h-5 w-5 text-emerald-600 mr-2" />
+                      <h4 className="text-md font-medium text-gray-900">Next Steps</h4>
+                    </div>
+                    <div className="bg-emerald-50 rounded-lg p-4">
+                      {booking.next_steps ? (
+                        <p className="text-gray-700 whitespace-pre-wrap">{booking.next_steps}</p>
+                      ) : (
+                        <p className="text-gray-500 italic">No next steps documented for this appointment.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Follow-up Information */}
+                  {booking.follow_up_date && (
+                    <div>
+                      <div className="flex items-center mb-2">
+                        <Calendar className="h-5 w-5 text-emerald-600 mr-2" />
+                        <h4 className="text-md font-medium text-gray-900">Follow-up Appointment</h4>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <p className="text-gray-700">
+                          <strong>Date:</strong> {formatDate(booking.follow_up_date)}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Please ensure you attend this follow-up appointment to track your progress.
+                        </p>
+                      </div>
+                    </div>
                   )}
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                    >
-                      <span>Upload a file</span>
-                      <input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                 </div>
               </div>
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-red-50 p-4 mb-6">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Error</h3>
-                    <p className="text-sm text-red-700 mt-1">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-center">
-              <button
-                onClick={analyzeImage}
-                disabled={!selectedFile || loading}
-                className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white ${
-                  !selectedFile || loading
-                    ? 'bg-indigo-300 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                }`}
-              >
-                {loading ? 'Analyzing...' : 'Analyze Photo'}
-              </button>
-            </div>
+            ))}
           </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Need to book a new appointment?{' '}
+            <a href="/appointments" className="text-emerald-600 hover:text-emerald-500 font-medium">
+              Schedule here
+            </a>
+          </p>
         </div>
-
-        {loading && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-500 border-t-transparent"></div>
-            <p className="mt-2 text-gray-600">Analyzing your image...</p>
-          </div>
-        )}
-
-        {analysis && (
-          <div className="bg-white shadow rounded-lg p-6 mt-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Analysis Results</h2>
-            <div className="prose max-w-none">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-600 whitespace-pre-line">{analysis}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
-};
-
-export default Assessments; 
+} 
