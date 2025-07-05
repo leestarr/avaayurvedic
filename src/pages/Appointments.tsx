@@ -13,7 +13,8 @@ interface Service {
 }
 
 interface FormData {
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
 }
@@ -41,8 +42,9 @@ export default function Appointments() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
   });
@@ -75,13 +77,15 @@ export default function Appointments() {
           
         if (profile) {
           setFormData({
-            name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
             email: profile.email || user.email || '',
             phone: profile.phone || '',
           });
         } else {
           setFormData({
-            name: '',
+            first_name: '',
+            last_name: '',
             email: user.email || '',
             phone: '',
           });
@@ -151,8 +155,8 @@ export default function Appointments() {
         .from('user_profiles')
         .upsert({
           user_id: user.id,
-          first_name: formData.name.split(' ')[0],
-          last_name: formData.name.split(' ').slice(1).join(' '),
+          first_name: formData.first_name,
+          last_name: formData.last_name,
           email: formData.email,
           phone: formData.phone
         }, {
@@ -284,15 +288,27 @@ export default function Appointments() {
           <h2 className="text-2xl font-bold mb-4">Your Information</h2>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1">Full Name</label>
+              <label className="block mb-1">First Name</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded"
                 required
-                placeholder="John Doe"
+                placeholder="First Name"
+              />
+            </div>
+            <div>
+              <label className="block mb-1">Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                required
+                placeholder="Last Name"
               />
             </div>
             <div>

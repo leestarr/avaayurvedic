@@ -3,12 +3,16 @@ import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Heart, User, Calendar } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import Logo from './Logo';
+import { checkIsAdmin } from '../../lib/supabase';
+import { useUser } from '@supabase/auth-helpers-react';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { cart } = useCart();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const user = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +26,14 @@ const Header: React.FC = () => {
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
+
+  useEffect(() => {
+    if (user) {
+      checkIsAdmin().then(setIsAdmin);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   return (
     <header
@@ -45,6 +57,9 @@ const Header: React.FC = () => {
           <NavLink to="/dosha-quiz" label="Dosha Quiz" />
           <NavLink to="/assessments" label="Assessments" />
           <NavLink to="/about" label="About Us" />
+          {isAdmin && (
+            <NavLink to="/admin" label={<span className="font-bold text-red-600">Admin</span>} />
+          )}
         </nav>
 
         {/* Desktop Action Buttons */}
@@ -121,6 +136,9 @@ const Header: React.FC = () => {
               <MobileNavLink to="/about" label="About Us" />
               <MobileNavLink to="/favorites" label="Favorites" />
               <MobileNavLink to="/account" label="Account" />
+              {isAdmin && (
+                <MobileNavLink to="/admin" label={<span className="font-bold text-red-600">Admin</span>} />
+              )}
             </nav>
           </div>
         </div>
@@ -131,7 +149,7 @@ const Header: React.FC = () => {
 
 interface NavLinkProps {
   to: string;
-  label: string;
+  label: React.ReactNode;
 }
 
 const NavLink: React.FC<NavLinkProps> = ({ to, label }) => {

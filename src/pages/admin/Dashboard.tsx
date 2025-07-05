@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Calendar, FileText, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Calendar, FileText, LogOut, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const AdminDashboard: React.FC = () => {
@@ -20,10 +20,11 @@ const AdminDashboard: React.FC = () => {
             Avaayurvedic Admin
           </div>
           <nav className="space-y-2">
-            <NavLink to="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" end />
+            <NavLink to="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
             <NavLink to="/admin/products" icon={<Package size={20} />} label="Products" />
             <NavLink to="/admin/appointments" icon={<Calendar size={20} />} label="Appointments" />
             <NavLink to="/admin/quiz" icon={<FileText size={20} />} label="Dosha Quiz" />
+            <NavLink to="/admin/users" icon={<Users size={20} />} label="Users" />
             <button
               onClick={handleSignOut}
               className="w-full flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-emerald-700 rounded-md transition-colors"
@@ -47,13 +48,11 @@ interface NavLinkProps {
   to: string;
   icon: React.ReactNode;
   label: string;
-  end?: boolean;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ to, icon, label, end }) => (
+const NavLink: React.FC<NavLinkProps> = ({ to, icon, label }) => (
   <Link
     to={to}
-    end={end}
     className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-emerald-700 rounded-md transition-colors"
   >
     {icon}
