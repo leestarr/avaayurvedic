@@ -46,12 +46,14 @@ interface DashboardData {
   bookingGrowth: number;
   monthlyRevenue: number;
   productsSold: number;
+  productGrowth: number;
   completionRate: number;
   popularServices: Array<{ name: string; count: number }>;
   monthlyBookings: Array<{ month: string; count: number }>;
   serviceRevenue: Array<{ service: string; revenue: number }>;
   doshaCompletions: Array<{ dosha: string; count: number }>;
   userRegistrations: Array<{ month: string; count: number }>;
+  productSales: Array<{ month: string; count: number }>;
 }
 
 const DashboardOverview: React.FC = () => {
@@ -87,8 +89,11 @@ const DashboardOverview: React.FC = () => {
       const userGrowth = calculateGrowth(usersData.monthlyData);
       const totalBookings = bookingsData.total;
       const bookingGrowth = calculateGrowth(bookingsData.monthlyData);
-      const monthlyRevenue = bookingsData.revenue;
+      const serviceRevenue = bookingsData.revenue;
+      const productRevenue = productsData.revenue;
+      const totalRevenue = serviceRevenue + productRevenue;
       const productsSold = productsData.sold;
+      const productGrowth = calculateGrowth(productsData.monthlySales);
       const completionRate = calculateCompletionRate(bookingsData.bookings);
       const popularServices = getPopularServices(bookingsData.bookings);
 
@@ -97,14 +102,16 @@ const DashboardOverview: React.FC = () => {
         userGrowth,
         totalBookings,
         bookingGrowth,
-        monthlyRevenue,
+        monthlyRevenue: totalRevenue,
         productsSold,
+        productGrowth,
         completionRate,
         popularServices,
         monthlyBookings: bookingsData.monthlyData,
         serviceRevenue: bookingsData.serviceRevenue,
         doshaCompletions: quizData.doshaData,
-        userRegistrations: usersData.monthlyData
+        userRegistrations: usersData.monthlyData,
+        productSales: productsData.monthlySales
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -114,53 +121,141 @@ const DashboardOverview: React.FC = () => {
   };
 
   const fetchUsersData = async () => {
-    const { data: users } = await supabase
-      .from('user_profiles')
-      .select('created_at');
+    try {
+      const { data: users, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('created_at');
 
-    const { data: monthlyUsers } = await supabase
-      .from('user_profiles')
-      .select('created_at')
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth() - 6, 1).toISOString());
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        return { total: 0, monthlyData: [] };
+      }
 
-    const monthlyData = processMonthlyData(monthlyUsers || [], 'created_at');
-    
-    return {
-      total: users?.length || 0,
-      monthlyData
-    };
+      const { data: monthlyUsers, error: monthlyError } = await supabase
+        .from('user_profiles')
+        .select('created_at')
+        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth() - 6, 1).toISOString());
+
+      if (monthlyError) {
+        console.error('Error fetching monthly users:', monthlyError);
+        return { total: users?.length || 0, monthlyData: [] };
+      }
+
+      const monthlyData = processMonthlyData(monthlyUsers || [], 'created_at');
+      
+      return {
+        total: users?.length || 0,
+        monthlyData
+      };
+    } catch (error) {
+      console.error('Error in fetchUsersData:', error);
+      return { total: 0, monthlyData: [] };
+    }
   };
 
   const fetchBookingsData = async () => {
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        services(name, price)
-      `);
+    try {
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          services(name, price)
+        `);
 
-    const { data: monthlyBookings } = await supabase
-      .from('bookings')
-      .select('created_at, services(name, price)')
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth() - 6, 1).toISOString());
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        return {
+          total: 0,
+          bookings: [],
+          monthlyData: [],
+          revenue: 0,
+          serviceRevenue: []
+        };
+      }
 
-    const monthlyData = processMonthlyData(monthlyBookings || [], 'created_at');
-    const revenue = calculateRevenue(bookings || []);
-    const serviceRevenue = calculateServiceRevenue(bookings || []);
+      const { data: monthlyBookings, error: monthlyError } = await supabase
+        .from('bookings')
+        .select('created_at, services(name, price)')
+        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth() - 6, 1).toISOString());
 
-    return {
-      total: bookings?.length || 0,
-      bookings: bookings || [],
-      monthlyData,
-      revenue,
-      serviceRevenue
-    };
+      if (monthlyError) {
+        console.error('Error fetching monthly bookings:', monthlyError);
+        return {
+          total: bookings?.length || 0,
+          bookings: bookings || [],
+          monthlyData: [],
+          revenue: calculateRevenue(bookings || []),
+          serviceRevenue: calculateServiceRevenue(bookings || [])
+        };
+      }
+
+      const monthlyData = processMonthlyData(monthlyBookings || [], 'created_at');
+      const revenue = calculateRevenue(bookings || []);
+      const serviceRevenue = calculateServiceRevenue(bookings || []);
+
+      return {
+        total: bookings?.length || 0,
+        bookings: bookings || [],
+        monthlyData,
+        revenue,
+        serviceRevenue
+      };
+    } catch (error) {
+      console.error('Error in fetchBookingsData:', error);
+      return {
+        total: 0,
+        bookings: [],
+        monthlyData: [],
+        revenue: 0,
+        serviceRevenue: []
+      };
+    }
   };
 
   const fetchProductsData = async () => {
-    // For now, we'll use a placeholder since we don't have purchase tracking
-    // In a real implementation, you'd fetch from a purchases/orders table
-    return { sold: 45 }; // Placeholder
+    try {
+      // Fetch real product sales data from purchases table
+      const { data: purchases, error } = await supabase
+        .from('purchases')
+        .select(`
+          quantity,
+          total_price,
+          created_at,
+          products(name, price)
+        `);
+
+      if (error) {
+        console.error('Error fetching purchases:', error);
+        return { 
+          sold: 0,
+          revenue: 0,
+          purchases: [],
+          monthlySales: []
+        };
+      }
+
+      // Calculate total products sold and revenue
+      const totalSold = purchases?.reduce((sum, purchase) => sum + (purchase.quantity || 0), 0) || 0;
+      const productRevenue = purchases?.reduce((sum, purchase) => sum + (purchase.total_price || 0), 0) || 0;
+
+      // Calculate monthly product sales for trends
+      const monthlyProductSales = processMonthlyData(purchases || [], 'created_at');
+
+      return { 
+        sold: totalSold,
+        revenue: productRevenue,
+        purchases: purchases || [],
+        monthlySales: monthlyProductSales
+      };
+    } catch (error) {
+      console.error('Error in fetchProductsData:', error);
+      return { 
+        sold: 0,
+        revenue: 0,
+        purchases: [],
+        monthlySales: []
+      };
+    }
   };
 
   const fetchServicesData = async () => {
@@ -172,13 +267,23 @@ const DashboardOverview: React.FC = () => {
   };
 
   const fetchQuizData = async () => {
-    const { data: quizResults } = await supabase
-      .from('dosha_quiz_results')
-      .select('primary_dosha');
+    try {
+      const { data: quizResults, error } = await supabase
+        .from('dosha_quiz_results')
+        .select('primary_dosha');
 
-    const doshaData = processDoshaData(quizResults || []);
-    
-    return { doshaData };
+      if (error) {
+        console.error('Error fetching quiz results:', error);
+        return { doshaData: [] };
+      }
+
+      const doshaData = processDoshaData(quizResults || []);
+      
+      return { doshaData };
+    } catch (error) {
+      console.error('Error in fetchQuizData:', error);
+      return { doshaData: [] };
+    }
   };
 
   const processMonthlyData = (data: any[], dateField: string) => {
@@ -377,7 +482,7 @@ const DashboardOverview: React.FC = () => {
         <KPICard
           title="Products Sold"
           value={data.productsSold.toLocaleString()}
-          change={0}
+          change={data.productGrowth}
           icon={<Package className="h-6 w-6" />}
           color="purple"
         />
@@ -496,22 +601,87 @@ const DashboardOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* Dosha Quiz Completions */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Dosha Quiz Completions</h3>
-        <div className="h-64">
-          <Doughnut 
-            data={doshaData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
+      {/* Additional Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Dosha Quiz Completions */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Dosha Quiz Completions</h3>
+          <div className="h-64">
+            <Doughnut 
+              data={doshaData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'bottom'
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Product Sales Trends */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Sales Trends</h3>
+          <div className="h-64">
+            <Line 
+              data={{
+                labels: data.productSales.map(d => d.month),
+                datasets: [{
+                  label: 'Products Sold',
+                  data: data.productSales.map(d => d.count),
+                  borderColor: 'rgb(147, 51, 234)',
+                  backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                  tension: 0.4
+                }]
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Data Summary */}
+      <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Summary</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="font-medium text-gray-900">Users</div>
+            <div className="text-gray-600">{data.totalUsers} total registered</div>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="font-medium text-gray-900">Bookings</div>
+            <div className="text-gray-600">{data.totalBookings} total appointments</div>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="font-medium text-gray-900">Products</div>
+            <div className="text-gray-600">{data.productsSold} total sold</div>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="font-medium text-gray-900">Revenue</div>
+            <div className="text-gray-600">${data.monthlyRevenue.toLocaleString()} total</div>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div className="text-sm text-blue-800">
+            <strong>Data Sources:</strong> All data is fetched in real-time from your Supabase database. 
+            The dashboard shows actual user registrations, bookings, product sales, and quiz completions.
+          </div>
         </div>
       </div>
     </div>
