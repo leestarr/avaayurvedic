@@ -147,7 +147,7 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
         </div>
@@ -156,30 +156,35 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Users Management</h1>
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-500">
-            Manage user profiles and view booking history
-          </div>
-          <button
-            onClick={handleSyncUsers}
-            disabled={syncing}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50"
-          >
-            {syncing ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-emerald-500 mr-2"></div>
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Sync Users
-          </button>
+    <div className="p-4 lg:p-6">
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Users Management</h1>
+        <p className="text-sm lg:text-base text-gray-600 mt-1 lg:mt-2">
+          Manage user profiles and view booking history
+        </p>
+      </div>
+
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 lg:mb-6 space-y-3 sm:space-y-0">
+        <div className="text-sm text-gray-500">
+          {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
         </div>
+        <button
+          onClick={handleSyncUsers}
+          disabled={syncing}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50"
+        >
+          {syncing ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-emerald-500 mr-2"></div>
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          Sync Users
+        </button>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6">
+      <div className="mb-4 lg:mb-6">
         <div className="relative">
           <input
             type="text"
@@ -192,7 +197,8 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white shadow-md rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -273,17 +279,74 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
-
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-12">
-            <User className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Try adjusting your search terms.' : 'No users have been created yet.'}
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {filteredUsers.map((user) => (
+          <div key={user.id} className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 h-10 w-10">
+                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <User className="h-5 w-5 text-emerald-600" />
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <div className="text-sm font-medium text-gray-900">
+                    {getUserName(user)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    ID: {user.user_id.slice(0, 8)}...
+                  </div>
+                </div>
+              </div>
+              <Link
+                to={`/admin/users/${user.user_id}`}
+                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200"
+              >
+                <ArrowRight className="h-3 w-3 mr-1" />
+                View
+              </Link>
+            </div>
+
+            <div className="space-y-2 mb-3">
+              <div className="flex items-center text-sm">
+                <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                <span className="text-gray-900">{user.email || 'No email'}</span>
+              </div>
+              
+              {user.phone && (
+                <div className="flex items-center text-sm">
+                  <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                  <span className="text-gray-900">{user.phone}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center text-sm">
+                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                <span className="text-gray-900">
+                  {user.booking_count} booking{user.booking_count !== 1 ? 's' : ''}
+                </span>
+              </div>
+              
+              <div className="text-xs text-gray-500">
+                Member since {formatDate(user.created_at)}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredUsers.length === 0 && (
+        <div className="text-center py-12">
+          <User className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {searchTerm ? 'Try adjusting your search terms.' : 'No users have been created yet.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 } 

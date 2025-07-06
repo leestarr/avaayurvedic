@@ -450,64 +450,64 @@ const DashboardOverview: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-600 mt-2">Monitor your business performance and key metrics</p>
+    <div className="p-4 lg:p-6">
+      <div className="mb-6 lg:mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+        <p className="text-sm lg:text-base text-gray-600 mt-1 lg:mt-2">Monitor your business performance and key metrics</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6 mb-6 lg:mb-8">
         <KPICard
           title="Total Users"
           value={data.totalUsers.toLocaleString()}
           change={data.userGrowth}
-          icon={<Users className="h-6 w-6" />}
+          icon={<Users className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="blue"
         />
         <KPICard
           title="Total Bookings"
           value={data.totalBookings.toLocaleString()}
           change={data.bookingGrowth}
-          icon={<Calendar className="h-6 w-6" />}
+          icon={<Calendar className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="green"
         />
         <KPICard
           title="Monthly Revenue"
           value={`$${data.monthlyRevenue.toLocaleString()}`}
           change={0}
-          icon={<DollarSign className="h-6 w-6" />}
+          icon={<DollarSign className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="emerald"
         />
         <KPICard
           title="Products Sold"
           value={data.productsSold.toLocaleString()}
           change={data.productGrowth}
-          icon={<Package className="h-6 w-6" />}
+          icon={<Package className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="purple"
         />
         <KPICard
           title="Completion Rate"
           value={`${data.completionRate}%`}
           change={0}
-          icon={<CheckCircle className="h-6 w-6" />}
+          icon={<CheckCircle className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="orange"
         />
         <KPICard
           title="Active Services"
           value={data.popularServices.length.toString()}
           change={0}
-          icon={<Award className="h-6 w-6" />}
+          icon={<Award className="h-5 w-5 lg:h-6 lg:w-6" />}
           color="indigo"
         />
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8">
         {/* Monthly Booking Trends */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Booking Trends</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Monthly Booking Trends</h3>
+          <div className="h-48 lg:h-64">
             <Line 
               data={bookingTrendsData}
               options={{
@@ -529,9 +529,9 @@ const DashboardOverview: React.FC = () => {
         </div>
 
         {/* Service Popularity */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Service Popularity</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Service Popularity</h3>
+          <div className="h-48 lg:h-64">
             <Pie 
               data={servicePopularityData}
               options={{
@@ -548,9 +548,9 @@ const DashboardOverview: React.FC = () => {
         </div>
 
         {/* User Registration Growth */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">User Registration Growth</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">User Registration Growth</h3>
+          <div className="h-48 lg:h-64">
             <Bar 
               data={userGrowthData}
               options={{
@@ -572,9 +572,9 @@ const DashboardOverview: React.FC = () => {
         </div>
 
         {/* Revenue by Service */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Service</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Revenue by Service</h3>
+          <div className="h-48 lg:h-64">
             <Bar 
               data={revenueData}
               options={{
@@ -602,11 +602,11 @@ const DashboardOverview: React.FC = () => {
       </div>
 
       {/* Additional Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8">
         {/* Dosha Quiz Completions */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Dosha Quiz Completions</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Dosha Quiz Completions</h3>
+          <div className="h-48 lg:h-64">
             <Doughnut 
               data={doshaData}
               options={{
@@ -623,9 +623,9 @@ const DashboardOverview: React.FC = () => {
         </div>
 
         {/* Product Sales Trends */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Sales Trends</h3>
-          <div className="h-64">
+        <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Product Sales Trends</h3>
+          <div className="h-48 lg:h-64">
             <Line 
               data={{
                 labels: data.productSales.map(d => d.month),
@@ -657,9 +657,9 @@ const DashboardOverview: React.FC = () => {
       </div>
 
       {/* Data Summary */}
-      <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Summary</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+      <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
+        <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-3 lg:mb-4">Data Summary</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 text-sm">
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="font-medium text-gray-900">Users</div>
             <div className="text-gray-600">{data.totalUsers} total registered</div>
@@ -678,7 +678,7 @@ const DashboardOverview: React.FC = () => {
           </div>
         </div>
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <div className="text-sm text-blue-800">
+          <div className="text-xs lg:text-sm text-blue-800">
             <strong>Data Sources:</strong> All data is fetched in real-time from your Supabase database. 
             The dashboard shows actual user registrations, bookings, product sales, and quiz completions.
           </div>
@@ -707,21 +707,21 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, change, icon, color }) 
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-white p-4 lg:p-6 rounded-lg shadow-md">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-xs lg:text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-lg lg:text-2xl font-bold text-gray-900 mt-1">{value}</p>
           {change !== 0 && (
             <div className="flex items-center mt-2">
-              <TrendingUp className={`h-4 w-4 ${change > 0 ? 'text-green-500' : 'text-red-500'}`} />
-              <span className={`text-sm font-medium ml-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <TrendingUp className={`h-3 w-3 lg:h-4 lg:w-4 ${change > 0 ? 'text-green-500' : 'text-red-500'}`} />
+              <span className={`text-xs lg:text-sm font-medium ml-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {change > 0 ? '+' : ''}{change.toFixed(1)}%
               </span>
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-full ${colorClasses[color as keyof typeof colorClasses]}`}>
+        <div className={`p-2 lg:p-3 rounded-full ${colorClasses[color as keyof typeof colorClasses]}`}>
           {icon}
         </div>
       </div>

@@ -1,25 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { quizQuestions, doshaDescriptions } from '../data/doshaQuiz';
+import { doshaDescriptions } from '../data/doshaQuiz';
 import { DoshaResult, DohaType } from '../types';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 
+interface QuizQuestion {
+  id: string;
+  question: string;
+  vata_option: string;
+  pitta_option: string;
+  kapha_option: string;
+  question_order: number;
+  is_active: boolean;
+}
+
 const DoshaQuiz: React.FC = () => {
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, DohaType>>({});
+  const [answers, setAnswers] = useState<Record<string, DohaType>>({});
   const [isQuizComplete, setIsQuizComplete] = useState(false);
   const [result, setResult] = useState<DoshaResult>({ vata: 0, pitta: 0, kapha: 0 });
   const [loading, setLoading] = useState(false);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
   const navigate = useNavigate();
 
-  const handleAnswer = (questionId: number, doshaType: DohaType) => {
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
+
+  const fetchQuestions = async () => {
+    try {
+      setLoadingQuestions(true);
+      const { data, error } = await supabase
+        .from('quiz_questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('question_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching questions:', error);
+        toast.error('Failed to load quiz questions');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast.error('No quiz questions available');
+        return;
+      }
+
+      setQuestions(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load quiz questions');
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  const handleAnswer = (questionId: string, doshaType: DohaType) => {
     const updatedAnswers = { ...answers, [questionId]: doshaType };
     setAnswers(updatedAnswers);
     
     // Move to next question
-    if (currentQuestionIndex < quizQuestions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       // Calculate results
@@ -27,7 +72,7 @@ const DoshaQuiz: React.FC = () => {
     }
   };
 
-  const calculateResults = (answersData: Record<number, DohaType>) => {
+  const calculateResults = (answersData: Record<string, DohaType>) => {
     const counts = Object.values(answersData).reduce(
       (acc, dosha) => {
         acc[dosha]++;
@@ -36,7 +81,7 @@ const DoshaQuiz: React.FC = () => {
       { vata: 0, pitta: 0, kapha: 0 } as Record<DohaType, number>
     );
     
-    const total = quizQuestions.length;
+    const total = questions.length;
     const vataPercentage = Math.round((counts.vata / total) * 100);
     const pittaPercentage = Math.round((counts.pitta / total) * 100);
     const kaphaPercentage = Math.round((counts.kapha / total) * 100);
@@ -116,6 +161,35 @@ const DoshaQuiz: React.FC = () => {
     setResult({ vata: 0, pitta: 0, kapha: 0 });
   };
 
+  if (loadingQuestions) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading quiz questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h1 className="text-2xl font-serif font-bold text-emerald-900 mb-2">Quiz Unavailable</h1>
+          <p className="text-gray-600 mb-6">No quiz questions are currently available. Please try again later.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-emerald-700 text-white rounded-md hover:bg-emerald-800 transition-colors"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isQuizComplete) {
     return (
       <QuizResults 
@@ -127,8 +201,8 @@ const DoshaQuiz: React.FC = () => {
     );
   }
 
-  const currentQuestion = quizQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
@@ -151,7 +225,7 @@ const DoshaQuiz: React.FC = () => {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm font-medium text-gray-500">
-                Question {currentQuestionIndex + 1} of {quizQuestions.length}
+                Question {currentQuestionIndex + 1} of {questions.length}
               </span>
               <div className="flex items-center">
                 <button
@@ -175,27 +249,23 @@ const DoshaQuiz: React.FC = () => {
           <div className="space-y-4">
             <AnswerOption
               doshaType="vata"
-              text={currentQuestion.options.vata}
+              text={currentQuestion.vata_option}
               isSelected={answers[currentQuestion.id] === 'vata'}
               onSelect={() => handleAnswer(currentQuestion.id, 'vata')}
             />
             <AnswerOption
               doshaType="pitta"
-              text={currentQuestion.options.pitta}
+              text={currentQuestion.pitta_option}
               isSelected={answers[currentQuestion.id] === 'pitta'}
               onSelect={() => handleAnswer(currentQuestion.id, 'pitta')}
             />
             <AnswerOption
               doshaType="kapha"
-              text={currentQuestion.options.kapha}
+              text={currentQuestion.kapha_option}
               isSelected={answers[currentQuestion.id] === 'kapha'}
               onSelect={() => handleAnswer(currentQuestion.id, 'kapha')}
             />
           </div>
-        </div>
-        
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          Note: This quiz provides a general assessment and is not a substitute for professional Ayurvedic consultation.
         </div>
       </div>
     </div>

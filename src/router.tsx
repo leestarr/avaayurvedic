@@ -16,6 +16,7 @@ import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserProfile from './pages/admin/AdminUserProfile';
 import AdminQuiz from './pages/admin/Quiz';
+import AdminCalendar from './pages/admin/Calendar';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Account from './pages/Account';
@@ -89,6 +90,7 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardOverview /> },
       { path: 'products', element: <AdminProducts /> },
       { path: 'appointments', element: <AdminAppointments /> },
+      { path: 'calendar', element: <AdminCalendar /> },
       { path: 'users', element: <AdminUsers /> },
       { path: 'users/:userId', element: <AdminUserProfile /> },
       { path: 'quiz', element: <AdminQuiz /> }
